@@ -6,6 +6,8 @@ import { isAllowlisted, normalizeEmail } from "@/lib/auth/allowlist";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Use JWT sessions to avoid Prisma calls in Edge middleware
+  session: { strategy: "jwt" },
   providers: [
     Resend({
       from: process.env.EMAIL_FROM || "Auron Intelligence <no-reply@auronintelligence.com>",
@@ -21,6 +23,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (!email) return false;
       const { ok } = await isAllowlisted(email);
       return ok;
+    },
+    // Include user info in JWT token
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.email = user.email;
+      }
+      return token;
+    },
+    // Make user info available in session
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.id as string;
+      }
+      return session;
     }
   },
   events: {
