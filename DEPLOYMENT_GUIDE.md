@@ -1,6 +1,6 @@
-# Next.js + Prisma + Railway Deployment Guide
+# Next.js + Railway Deployment Guide
 
-A comprehensive guide for deploying Next.js (App Router) applications with Prisma, Auth.js, and Railway. Based on real deployment experience and common pitfalls.
+A comprehensive guide for deploying Next.js (App Router) applications with Railway. Based on real deployment experience and common pitfalls across multiple production sites.
 
 ---
 
@@ -9,26 +9,51 @@ A comprehensive guide for deploying Next.js (App Router) applications with Prism
 1. [Tech Stack Overview](#tech-stack-overview)
 2. [Project Setup](#project-setup)
 3. [Next.js 15/16 Breaking Changes](#nextjs-1516-breaking-changes)
-4. [Prisma Configuration](#prisma-configuration)
-5. [Auth.js (NextAuth v5) Setup](#authjs-nextauth-v5-setup)
-6. [Railway Deployment](#railway-deployment)
-7. [Environment Variables](#environment-variables)
-8. [Common Errors & Solutions](#common-errors--solutions)
-9. [Deployment Checklist](#deployment-checklist)
+4. [Framer Motion & Mobile Issues](#framer-motion--mobile-issues)
+5. [CSS Best Practices](#css-best-practices)
+6. [Prisma Configuration](#prisma-configuration)
+7. [Auth.js (NextAuth v5) Setup](#authjs-nextauth-v5-setup)
+8. [Railway Deployment](#railway-deployment)
+9. [Environment Variables](#environment-variables)
+10. [Common Errors & Solutions](#common-errors--solutions)
+11. [Deployment Checklist](#deployment-checklist)
 
 ---
 
 ## Tech Stack Overview
 
+### Full-Stack Application (with Database & Auth)
+
 | Component | Recommended | Purpose |
 |-----------|-------------|---------|
-| Framework | Next.js 15+ (App Router) | Full-stack React framework |
+| Framework | Next.js 16+ (App Router) | Full-stack React framework |
 | Database | PostgreSQL | Relational database |
 | ORM | Prisma | Type-safe database access |
 | Auth | Auth.js v5 (NextAuth) | Authentication with magic links |
 | Email | Resend | Transactional email delivery |
 | Hosting | Railway | Cloud platform with Postgres |
 | Forms | React Hook Form + Zod | Type-safe form validation |
+| Animation | Framer Motion | Production-grade animations |
+
+### Marketing/Portfolio Site (Static)
+
+| Component | Recommended | Purpose |
+|-----------|-------------|---------|
+| Framework | Next.js 16+ (App Router) | Static site generation |
+| Styling | CSS Variables + Tokens | Design system |
+| Animation | Framer Motion | Scroll reveals, transitions |
+| Email | Resend | Contact form submission |
+| Hosting | Railway | Simple deployment |
+| Forms | React Hook Form + Zod | Type-safe validation |
+
+### When to Use Which Stack
+
+| Use Full-Stack When | Use Static When |
+|---------------------|-----------------|
+| User accounts needed | Marketing/portfolio site |
+| Data persistence required | Contact form only |
+| Admin dashboard needed | No user accounts |
+| Complex business logic | Mostly static content |
 
 ---
 
@@ -176,6 +201,240 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/login", request.url));
   }
   return NextResponse.next();
+}
+```
+
+---
+
+## Framer Motion & Mobile Issues
+
+### CRITICAL: Mobile Blank Page Issue
+
+**Problem:** Pages appear blank on mobile in-app browsers (Instagram, Messages, Facebook, etc.) but work fine on desktop and after clicking internal links.
+
+**Root Cause:** Framer Motion's `useInView` hook uses `IntersectionObserver`, which can fail to detect elements as "in view" on initial page load in mobile WebViews. Content stays at `opacity: 0` indefinitely.
+
+**Symptoms:**
+- Page is blank on first load from external link
+- Header shows but content doesn't
+- Clicking internal links (logo, nav) makes content appear
+- Works perfectly on desktop
+
+### Solution: Progressive Enhancement Pattern
+
+**Never hide content with JavaScript.** Content must be visible by default, with animations as enhancement only.
+
+#### 1. ScrollReveal Components - Show Content Before Mount
+
+```typescript
+"use client";
+
+import { motion, useReducedMotion, useInView } from "framer-motion";
+import { useRef, useState, useEffect, ReactNode } from "react";
+
+export default function ScrollReveal({ children, className = "" }) {
+  const [hasMounted, setHasMounted] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const prefersReducedMotion = useReducedMotion();
+
+  useEffect(() => {
+    // Delay lets IntersectionObserver initialize properly on mobile
+    const timer = setTimeout(() => setHasMounted(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // CRITICAL: Show content immediately before mount
+  if (!hasMounted || prefersReducedMotion) {
+    return <div ref={ref} className={className}>{children}</div>;
+  }
+
+  return (
+    <motion.div
+      ref={ref}
+      className={className}
+      initial={{ opacity: 1, y: 0 }}  // Start visible!
+      animate={isInView ? "visible" : "initial"}
+      variants={{
+        initial: { opacity: 1, y: 0 },
+        visible: { opacity: 1, y: 0, transition: { duration: 0.5 } }
+      }}
+    >
+      {children}
+    </motion.div>
+  );
+}
+```
+
+#### 2. Never Use `initial={{ opacity: 0 }}` in Page Components
+
+**Bad:**
+```typescript
+<motion.h1 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+  Hello World
+</motion.h1>
+```
+
+**Good:**
+```typescript
+<ScrollReveal>
+  <h1>Hello World</h1>
+</ScrollReveal>
+```
+
+#### 3. Add CSS Fallback Rules
+
+```css
+/* Ensure content is visible even if JS fails */
+main, .hero, .section, .container, .cards, .card,
+h1, h2, h3, h4, p, .badge, .btn {
+  opacity: 1;
+  transform: none;
+  visibility: visible;
+}
+```
+
+### Loading Screen for Hydration
+
+For complex animated sites, use a loading screen to ensure everything is hydrated before revealing content:
+
+```typescript
+"use client";
+
+import { useState, useEffect } from "react";
+
+export default function LoadingScreen({ children, minLoadTime = 800 }) {
+  const [isLoading, setIsLoading] = useState(true);
+  const [showContent, setShowContent] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setIsLoading(false), minLoadTime);
+    return () => clearTimeout(timer);
+  }, [minLoadTime]);
+
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => setShowContent(true), 200);
+    }
+  }, [isLoading]);
+
+  return (
+    <>
+      {isLoading && <YourLoadingUI />}
+      <div style={{ opacity: showContent ? 1 : 0 }}>
+        {children}
+      </div>
+    </>
+  );
+}
+```
+
+### Key Framer Motion Rules
+
+| Do | Don't |
+|----|-------|
+| Use `hasMounted` pattern for scroll animations | Use `initial={{ opacity: 0 }}` directly on elements |
+| Wrap animated content in scroll-aware components | Rely on `useInView` for initial visibility |
+| Add CSS fallbacks for visibility | Hide content before JS loads |
+| Test on mobile in-app browsers | Only test in Safari/Chrome on desktop |
+| Use 100ms delay before enabling animations | Enable animations immediately on mount |
+
+---
+
+## CSS Best Practices
+
+### Fix Overscroll Background Color
+
+**Problem:** White background shows when scrolling past content bounds on iOS.
+
+```css
+html {
+  background-color: #050709;  /* Match your dark theme */
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: #050709;
+  /* Your gradient on top */
+  background-image: radial-gradient(...), linear-gradient(...);
+  background-attachment: fixed;
+}
+```
+
+### Mobile Responsive Essentials
+
+```css
+/* Prevent iOS zoom on input focus */
+.input, .textarea, .select {
+  font-size: 16px;  /* Must be 16px or larger */
+}
+
+/* Touch-friendly button sizes (Apple's 44px minimum) */
+@media (hover: none) and (pointer: coarse) {
+  .btn {
+    min-height: 44px;
+  }
+}
+
+/* Safe areas for notched devices (iPhone X+) */
+@supports (padding: max(0px)) {
+  .site-header {
+    padding-left: max(18px, env(safe-area-inset-left));
+    padding-right: max(18px, env(safe-area-inset-right));
+  }
+  
+  .site-footer {
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+}
+
+/* Smooth scrolling with reduced motion respect */
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+```
+
+### Premium Visual Enhancements
+
+```css
+/* Text rendering */
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Gradient text */
+h1 {
+  background: linear-gradient(135deg, #f3f4f6 0%, #7dd3fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Glassmorphism card */
+.glass-card {
+  background: linear-gradient(145deg, rgba(125, 211, 252, 0.08), rgba(15, 23, 42, 0.9));
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* Subtle noise texture */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.015;
+  background-image: url("data:image/svg+xml,...");  /* SVG noise filter */
 }
 ```
 
@@ -454,6 +713,64 @@ npm audit fix --force
 git add -A && git commit -m "Fix security vulnerabilities" && git push
 ```
 
+### 7. Blank page on mobile (content works after clicking links)
+
+**Cause:** Framer Motion's `useInView`/`IntersectionObserver` failing on initial page load in mobile WebViews
+
+**Symptoms:**
+- Header shows, content blank
+- Works after clicking any internal link
+- Works on desktop
+- Specifically fails in Instagram, Facebook, Messages in-app browsers
+
+**Solution:** Use progressive enhancement pattern (see [Framer Motion & Mobile Issues](#framer-motion--mobile-issues)):
+1. Add `hasMounted` state to scroll animation components
+2. Show content as plain `<div>` before mount
+3. Remove `initial={{ opacity: 0 }}` from page components
+4. Add CSS fallback: `opacity: 1; transform: none;`
+
+### 8. White background on iOS overscroll
+
+**Cause:** `html` element doesn't have background color set
+
+**Solution:**
+```css
+html {
+  background-color: #050709;  /* Your dark background */
+  overscroll-behavior: none;
+}
+```
+
+### 9. Resend API key error during build
+
+**Cause:** Resend client instantiated at module level, requires API key at build time
+
+**Solution:** Lazy-load the Resend client:
+```typescript
+// Bad - runs at build time
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+// Good - only runs when function is called
+export async function sendEmail() {
+  const { Resend } = await import("resend");
+  const resend = new Resend(process.env.RESEND_API_KEY);
+  // ...
+}
+```
+
+### 10. Zod v4 `required_error` not working
+
+**Cause:** Zod v4 changed the API for error customization
+
+**Solution:**
+```typescript
+// Zod v3 style (may not work in v4)
+z.string({ required_error: "Required" })
+
+// Zod v4 style
+z.string().min(1, "Required")
+```
+
 ---
 
 ## Deployment Checklist
@@ -479,11 +796,24 @@ git add -A && git commit -m "Fix security vulnerabilities" && git push
 
 ### After Deploy
 
-- [ ] Home page loads
+- [ ] Home page loads on desktop
 - [ ] Auth flow works (magic link sends, login succeeds)
 - [ ] Database operations work
 - [ ] Protected routes redirect correctly
 - [ ] No errors in Deploy Logs
+
+### Mobile Testing (CRITICAL)
+
+- [ ] Test on iPhone Safari
+- [ ] Test on iPhone in Instagram in-app browser
+- [ ] Test on iPhone in Messages/iMessage links
+- [ ] Test on Android Chrome
+- [ ] Content visible on first load (not blank)
+- [ ] No white background on overscroll
+- [ ] Forms don't cause zoom on focus
+- [ ] Buttons are large enough to tap (44px min)
+- [ ] Loading screen shows (if implemented)
+- [ ] All animations work after content loads
 
 ---
 
@@ -519,7 +849,44 @@ npm audit fix --force
 - [Auth.js Documentation](https://authjs.dev)
 - [Railway Documentation](https://docs.railway.app)
 - [Resend Documentation](https://resend.com/docs)
+- [Framer Motion Documentation](https://www.framer.com/motion/)
+- [React Hook Form Documentation](https://react-hook-form.com/)
+- [Zod Documentation](https://zod.dev/)
 
 ---
 
-*Last updated: February 2026*
+## Project Examples
+
+| Project | Type | Features |
+|---------|------|----------|
+| Auron Intelligence | Full-stack | Prisma, Auth.js, Protected routes, Admin dashboard |
+| RMVS Portfolio | Static | Framer Motion animations, Contact form, Loading screen |
+
+---
+
+## Key Lessons Learned
+
+1. **Test on mobile in-app browsers** - Desktop testing is not sufficient. Instagram, Messages, and Facebook WebViews behave differently than Safari/Chrome.
+
+2. **Progressive enhancement is mandatory** - Never hide content with JavaScript. Content must be visible by default.
+
+3. **IntersectionObserver is unreliable on mobile** - Don't depend on `useInView` for initial visibility. Use mount detection with fallbacks.
+
+4. **100ms delay matters** - Give browser time to initialize observers before enabling animations.
+
+5. **CSS fallbacks are your safety net** - Always have `opacity: 1` as default in CSS.
+
+6. **Edge Runtime has limited Node.js support** - Middleware can't use Prisma, `global`, or most Node APIs.
+
+7. **JWT sessions are Edge-compatible** - Use `session: { strategy: "jwt" }` for Auth.js with middleware.
+
+8. **Lazy-load API clients** - Don't instantiate Resend/Stripe/etc. at module level.
+
+9. **Set background on html element** - Prevents white flash on iOS overscroll.
+
+10. **16px minimum font for inputs** - Prevents iOS zoom on focus.
+
+---
+
+*Last updated: February 3, 2026*
+*Based on: Auron Intelligence Website, RMVS Portfolio Website deployments*
