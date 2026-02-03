@@ -1,20 +1,11 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export default function Header() {
   return (
     <header className="site-header">
       <div className="container header-inner">
         <Link href="/" className="logo">
-          <span className="logo-mark">
-            <Image
-              src="/logo.png"
-              alt="Auron Intelligence"
-              width={28}
-              height={28}
-              style={{ objectFit: "contain" }}
-            />
-          </span>
+          <span className="logo-mark" />
           <span className="logo-text">Auron Intelligence</span>
         </Link>
         <nav className="nav-links">
