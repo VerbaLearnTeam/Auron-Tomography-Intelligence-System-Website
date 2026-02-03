@@ -17,7 +17,7 @@ function fmt(d: Date) {
 }
 
 export default async function AdminPage() {
-  const isAdmin = isAdminFromCookies();
+  const isAdmin = await isAdminFromCookies();
 
   if (!isAdmin) {
     return (

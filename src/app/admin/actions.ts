@@ -14,8 +14,8 @@ import {
 
 type InviteeType = "physician" | "partner" | "investor" | "other";
 
-function requireAdmin() {
-  if (!isAdminFromCookies()) throw new Error("Unauthorized");
+async function requireAdmin() {
+  if (!(await isAdminFromCookies())) throw new Error("Unauthorized");
 }
 
 function startLinkForEmail(email: string) {
@@ -34,18 +34,18 @@ export async function adminLoginAction(formData: FormData): Promise<void> {
     revalidatePath("/admin");
     return;
   }
-  setAdminCookie();
+  await setAdminCookie();
   revalidatePath("/admin");
 }
 
 export async function adminLogoutAction(): Promise<void> {
-  requireAdmin();
-  clearAdminCookie();
+  await requireAdmin();
+  await clearAdminCookie();
   revalidatePath("/admin");
 }
 
 export async function approveAccessRequestAction(formData: FormData): Promise<void> {
-  requireAdmin();
+  await requireAdmin();
   const requestId = String(formData.get("request_id") || "");
   const inviteeType = (String(formData.get("invitee_type") || "other") as InviteeType) || "other";
   const reviewedBy = String(formData.get("reviewed_by") || "").trim() || null;
@@ -102,7 +102,7 @@ export async function approveAccessRequestAction(formData: FormData): Promise<vo
 }
 
 export async function rejectAccessRequestAction(formData: FormData): Promise<void> {
-  requireAdmin();
+  await requireAdmin();
   const requestId = String(formData.get("request_id") || "");
   const reviewedBy = String(formData.get("reviewed_by") || "").trim() || null;
 
@@ -120,7 +120,7 @@ export async function rejectAccessRequestAction(formData: FormData): Promise<voi
 }
 
 export async function directInviteAction(formData: FormData): Promise<void> {
-  requireAdmin();
+  await requireAdmin();
   const email = String(formData.get("email") || "").trim();
   const inviteeType = (String(formData.get("invitee_type") || "other") as InviteeType) || "other";
   const invitedBy = String(formData.get("invited_by") || "").trim() || null;
@@ -166,7 +166,7 @@ export async function directInviteAction(formData: FormData): Promise<void> {
 }
 
 export async function revokeAllowlistAction(formData: FormData): Promise<void> {
-  requireAdmin();
+  await requireAdmin();
   const email = String(formData.get("email") || "").trim();
   const reason = String(formData.get("reason") || "").trim() || null;
   const revokedBy = String(formData.get("revoked_by") || "").trim() || null;
@@ -203,7 +203,7 @@ export async function revokeAllowlistAction(formData: FormData): Promise<void> {
 }
 
 export async function reinstateAllowlistAction(formData: FormData): Promise<void> {
-  requireAdmin();
+  await requireAdmin();
   const email = String(formData.get("email") || "").trim();
   const invitedBy = String(formData.get("invited_by") || "").trim() || null;
 
