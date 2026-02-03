@@ -32,35 +32,22 @@ export default function ContributeWizard({ uploadLink }: { uploadLink: string })
   const [submissionId, setSubmissionId] = useState<string | null>(null);
 
   const eligibilityForm = useForm<ContributeEligibility>({
-    resolver: zodResolver(contributeEligibilitySchema),
-    defaultValues: {
-      eligible_right_to_share: false,
-      eligible_raw_dicom: false,
-      eligible_zipped_folder: false,
-      eligible_arterial_anatomy: false
-    }
+    resolver: zodResolver(contributeEligibilitySchema)
   });
 
   const consentForm = useForm<ContributeConsent>({
-    resolver: zodResolver(contributeConsentSchema),
-    defaultValues: {
-      consent_submit_for_review_and_research: false,
-      ack_not_medical_care: false,
-      ack_identifiable_during_intake: false
-    }
+    resolver: zodResolver(contributeConsentSchema)
   });
 
   const uploadForm = useForm<ContributeUpload>({
-    resolver: zodResolver(contributeUploadSchema),
-    defaultValues: { upload_completed: false }
+    resolver: zodResolver(contributeUploadSchema)
   });
 
   const submissionForm = useForm<ContributeSubmissionDetails>({
     resolver: zodResolver(contributeSubmissionDetailsSchema),
     defaultValues: {
       scan_type: "CTA",
-      scan_region: "Head & neck (arterial)",
-      confirm_match_upload: false
+      scan_region: "Head & neck (arterial)"
     }
   });
 

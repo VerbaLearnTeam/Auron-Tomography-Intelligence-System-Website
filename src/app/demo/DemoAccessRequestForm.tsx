@@ -20,9 +20,7 @@ export default function DemoAccessRequestForm() {
   } = useForm<DemoAccessRequest>({
     resolver: zodResolver(demoAccessRequestSchema),
     defaultValues: {
-      availability: "No preference",
-      ack_no_sharing: false,
-      ack_prototype_not_medical_advice: false
+      availability: "No preference"
     }
   });
 
