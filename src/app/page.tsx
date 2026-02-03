@@ -30,13 +30,13 @@ export default function HomePage() {
               Testers can explore the workflow end to end: case list, viewer overlays, report summary, and feedback.
             </p>
             <div style={{ display: "grid", gap: 12, marginTop: 18 }}>
-              <div className="panel">
+              <div className="panel animate-fade-in-up delay-3">
                 <strong>What you will see</strong>
                 <p className="muted">
                   Guided walkthrough, case navigation, overlay controls, and report-style outputs.
                 </p>
               </div>
-              <div className="panel">
+              <div className="panel animate-fade-in-up delay-4">
                 <strong>Data handling</strong>
                 <p className="muted">
                   Raw DICOM accepted immediately for contribution. De-identification occurs after receipt.
@@ -55,15 +55,15 @@ export default function HomePage() {
             less manual friction and more consistent review.
           </p>
           <div className="cards">
-            <div className="card">
+            <div className="card animate-fade-in-up delay-1" style={{ opacity: 0 }}>
               <h3>Ingest and organize</h3>
               <p className="muted">Bring arterial CT data into a controlled intake pipeline for iteration.</p>
             </div>
-            <div className="card">
+            <div className="card animate-fade-in-up delay-2" style={{ opacity: 0 }}>
               <h3>Segment and visualize</h3>
               <p className="muted">Generate vessel and lesion overlays for interactive exploration.</p>
             </div>
-            <div className="card">
+            <div className="card animate-fade-in-up delay-3" style={{ opacity: 0 }}>
               <h3>Quantify and review</h3>
               <p className="muted">Surface structured outputs and measurements for evaluation.</p>
             </div>
@@ -73,14 +73,14 @@ export default function HomePage() {
 
       <section className="section">
         <div className="container split">
-          <div>
+          <div className="animate-fade-in-up" style={{ opacity: 0 }}>
             <h2>Why arterial CT intelligence matters</h2>
             <p className="muted">
               Arterial disease review is high-impact and time-intensive. Our goal is to deliver a reliable, navigable
               prototype so clinical teams and partners can evaluate the workflow early.
             </p>
           </div>
-          <div className="panel">
+          <div className="panel animate-fade-in-up delay-2" style={{ opacity: 0 }}>
             <h3>Prototype transparency</h3>
             <p className="muted">
               Outputs shown in the demo may be simulated or partial while we continue to refine data and models.
@@ -92,7 +92,7 @@ export default function HomePage() {
 
       <section className="section">
         <div className="container split">
-          <div>
+          <div className="animate-fade-in-up" style={{ opacity: 0 }}>
             <h2>Built by an international team</h2>
             <p className="muted">
               Auron is an international group of doctors, machine learning experts, healthcare operators, and student
@@ -102,7 +102,7 @@ export default function HomePage() {
               Meet the team
             </Link>
           </div>
-          <div className="panel">
+          <div className="panel animate-fade-in-up delay-2" style={{ opacity: 0 }}>
             <h3>Contribute scans (paid)</h3>
             <p className="muted">
               If you have eligible arterial CT imaging and the right to share it, submit raw DICOM for review. If
@@ -116,7 +116,7 @@ export default function HomePage() {
       </section>
 
       <section className="section">
-        <div className="container panel" style={{ textAlign: "center" }}>
+        <div className="container panel animate-scale-in" style={{ textAlign: "center", opacity: 0 }}>
           <h2>Request access or contribute data</h2>
           <p className="muted">Invite-only demo access. Raw DICOM accepted immediately for contribution.</p>
           <div className="nav-cta" style={{ justifyContent: "center" }}>

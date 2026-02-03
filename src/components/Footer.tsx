@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 
 export default function Footer() {
   return (
@@ -7,13 +6,7 @@ export default function Footer() {
       <div className="container footer-inner">
         <div>
           <div className="footer-logo">
-            <Image
-              src="/logo.png"
-              alt="Auron Intelligence"
-              width={32}
-              height={32}
-              style={{ objectFit: "contain", marginRight: 10 }}
-            />
+            <span className="logo-mark" />
             Auron Intelligence
           </div>
           <p className="muted">
