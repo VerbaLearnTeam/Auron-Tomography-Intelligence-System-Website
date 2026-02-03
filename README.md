@@ -47,6 +47,16 @@ Run migrations on deploy:
 npx prisma migrate deploy
 ```
 
+## Railway deploy (quick)
+
+1. Create a Railway project from the GitHub repo.
+2. Add a PostgreSQL service.
+3. In the web service, set `DATABASE_URL` to the Postgres service `DATABASE_URL` variable.
+4. Add env vars: `AUTH_SECRET`, `AUTH_TRUST_HOST=true`, `AUTH_RESEND_KEY`, `EMAIL_FROM`, `ADMIN_API_KEY`, `UPLOAD_LINK_URL`, `APP_START_URL`.
+5. Pre-deploy command: `npx prisma migrate deploy`
+6. Build command: `npx prisma generate && npm run build`
+7. Start command: `npm run start`
+
 ## Notes
 
 - Contribute scans flow accepts raw DICOM immediately and de-identifies after receipt.
